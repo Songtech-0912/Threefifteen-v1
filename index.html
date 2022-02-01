@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Three Fifteen App</title>
+    <style>
+      :root {
+        --bg-darkest: #0f0f0f;
+        --bg-darker: #1b1b1b;
+        --bg-dark: #2c2c2c;
+        --bg-normal: #a7a492;
+        --bg-light: #dedac2;
+        --bg-lighter: #f5f5f5;
+        --bg-lightest: #ffffff;
+      }
+
+      body {
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        width: 100vw;
+        font-family: sans-serif;
+      }
+
+      .content-container {
+        max-width: 75%;
+        margin: 2rem auto;
+      }
+
+      .no-pointer {
+        pointer-events: none;
+      }
+
+      main {
+        /* min-height 0 here due to an unusual
+         firefox bug that causes the min-h
+         of flex children to default to 
+         content rather than container size */
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 0;
+      }
+
+      section {
+        height: 100%;
+        min-height: 0;
+      }
+
+      #left-panel {
+        width: 100%;
+        overflow: auto;
+        resize: horizontal;
+        background-color: var(--bg-lightest);
+      }
+
+      #right-panel {
+        width: 35%;
+        background-color: var(--bg-light);
+        display: flex;
+        flex-direction: column;
+        overflow-y: scroll;
+      }
+
+      #right-panel-content div {
+        padding: 0.5rem;
+      }
+
+      .content-container div p, span {
+        font-size: 1.3rem;
+        color: var(--bg-darkest);
+      }
+
+      .present-item {
+        padding: 1.5rem 2rem;
+        background-color: #4ade80;
+        border-radius: 0.25rem;
+      }
+
+      .buslist {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .nonpresent-item {
+        padding: 1.5rem 2rem;
+        background-color: #f87171;
+        border-radius: 0.25rem;
+      }
+
+      #currently-present-list > * {
+        margin-right: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      #not-currently-present-list > * {
+        margin-right: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      h1 {
+        font-size: 2.6rem;
+        margin-bottom: 3rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p {
+        color: #0d0d0d;
+      }
+
+      p,
+      label {
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section id="left-panel">
+        <div class="content-container">
+          <h1>Buses currently present</h1>
+          <div id="currently-present-list" class="buslist">
+            <!--Boxes are auto-generated here by JavaScript-->
+          </div>
+          <h1>Buses not here</h1>
+          <div id="not-currently-present-list" class="buslist">
+            <!--Boxes are auto-generated here by JavaScript-->
+          </div>
+        </div>
+      </section>
+      <section id="right-panel">
+        <div id="right-panel-content" class="content-container">
+          <h2 class="no-pointer">Settings</h2>
+          <p class="no-pointer">By default all checkboxes are unchecked, meaning no buses are here. When a bus arrives, check its checkbox - that indicates it is here.</p>
+          <!--Checkboxes are auto-generated here by JavaScript-->
+        </div>
+      </section>
+    </main>
+    <script>
+      let statefactory = [];
+      function $id(el) {
+        return document.getElementById(el);
+      }
+      function renderEl(markupString) {
+        // First, create a temporary DOM element
+        var tempParentElement = document.createElement("div");
+        tempParentElement.innerHTML = markupString;
+        var generatedHTMLElement = tempParentElement.firstElementChild;
+        return generatedHTMLElement;
+      }
+      function removeAllChildElements(container) {
+        while (container.lastChild) {
+          container.removeChild(container.lastChild);
+        }
+      }
+      
+      function removeFromArray(el, el_array) {
+        const filtered_array = el_array.filter(function (el_array) {
+          return el_array !== el;
+        });
+        return filtered_array;
+      }
+      
+      function updateCheckBoxData(targetID, targetBusName, isChecked) {
+        let checkBoxDataObj = {
+          name: targetBusName,
+          id: targetID,
+          checked: isChecked
+        };
+        // Remove all duplicate data from statefactory
+        // This means if there is a previously entered entry
+        // that is exactly the same except for the checked state
+        statefactory.forEach(function(element) {
+          if (targetID === element["id"]) {
+            let index = statefactory.indexOf(element)
+            statefactory.splice(index, 1)
+            // removeFromArray(element, statefactory);
+          }
+        });
+        // Add the new data to statefactory
+        statefactory.push(checkBoxDataObj);
+        console.log(JSON.stringify(statefactory, null, 2));
+        // Clean any previously added buses from the left panel
+        removeAllChildElements($id("currently-present-list"));
+        removeAllChildElements($id("not-currently-present-list"));
+        // And add the new buses to be displayed on the left panel
+        statefactory.forEach(function(element){
+        	if (element["checked"] === true) {
+        		markupBlock = renderEl(`<span class="present-item">${element.name}</span>`);
+        		$id("currently-present-list").appendChild(markupBlock);
+        	} else {
+        		markupBlock = renderEl(`<span class="nonpresent-item">${element.name}</span>`);
+        		$id("not-currently-present-list").appendChild(markupBlock);
+        	}
+        })
+      }
+      for (let i = 1; i < 32; i++) {
+        let busID = `bus-${i}`;
+        let busCheckboxWrapper = renderEl(
+          `<div>
+                  <input type="checkbox" id="${busID}" value="notHere">
+                  <label for="${busID}">Bus ${i}</label>
+                </div>
+                `
+        );
+        $id("right-panel-content").appendChild(busCheckboxWrapper);
+      }
+      // By default all buses are not here
+      // So we add all buses to Statefactory
+      let checkBoxDivs = $id("right-panel-content").getElementsByTagName("div");
+      // Convert HTMLCollection to NodeList so we can use forEach
+      checkBoxDivs = Array.from(checkBoxDivs);
+      console.log(checkBoxDivs)
+      checkBoxDivs.forEach(function(element){
+        let elementCheckbox = element.firstElementChild
+        let elementName = elementCheckbox.nextElementSibling.innerText
+        let elementID = elementCheckbox.id
+        let isElementChecked = elementCheckbox.checked
+        updateCheckBoxData(elementID, elementName, isElementChecked)
+      });
+      // Event delegation for clicking checkboxes
+      $id("right-panel-content").addEventListener("change", function (event) {
+        let target = event.target;
+        let targetID = target.id;
+        let targetBusName = target.nextElementSibling.innerText;
+        let isChecked = target.checked;
+        console.log("Checked:", isChecked);
+        updateCheckBoxData(targetID, targetBusName, isChecked);
+      });
+      // Warn user before closing the window/tab!
+      // Because if the window is closed ALL of the data is lost!
+      // In the future this might be dealt with by autosaving to localStorage
+      window.addEventListener('beforeunload', function (e) {
+          e.preventDefault();
+          e.returnValue = '';
+      });
+    </script>
+  </body>
+</html>
